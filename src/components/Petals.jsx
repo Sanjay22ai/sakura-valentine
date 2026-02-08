@@ -1,72 +1,66 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+
+/* deterministic pseudo random generator */
+function seededRandom(seed) {
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 export default function Petals() {
   const pointsRef = useRef();
-  const burstTimer = useRef(0);
+  const count = 350;
 
-  const count = 300;
-  const canopyY = 3;
+  /* IMPORTANT: match tree position */
+  const canopyCenterX = 2;   // tree x position
+  const canopyCenterY = 3;   // canopy height
+  const canopyCenterZ = 0;
+
   const canopyRadius = 2;
 
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3);
 
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * canopyRadius;
+      const r1 = seededRandom(i * 12.989);
+      const r2 = seededRandom(i * 78.233);
 
-      arr[i * 3] = Math.cos(angle) * radius;
-      arr[i * 3 + 1] = canopyY + Math.random() * canopyRadius * 0.8;
-      arr[i * 3 + 2] = Math.sin(angle) * radius;
+      const angle = r1 * Math.PI * 2;
+      const radius = r2 * canopyRadius;
+
+      arr[i * 3] = canopyCenterX + Math.cos(angle) * radius;
+      arr[i * 3 + 1] = canopyCenterY + r2 * 1.5;
+      arr[i * 3 + 2] = canopyCenterZ + Math.sin(angle) * radius;
     }
 
     return arr;
   }, []);
 
-  /* Listen for burst trigger */
-  useEffect(() => {
-    const triggerBurst = () => {
-      burstTimer.current = 1.5; // seconds
-    };
-
-    window.addEventListener("petal-burst", triggerBurst);
-    return () =>
-      window.removeEventListener("petal-burst", triggerBurst);
-  }, []);
-
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     if (!pointsRef.current) return;
 
     const pos = pointsRef.current.geometry.attributes.position;
-
-    burstTimer.current -= delta;
+    const time = state.clock.elapsedTime;
 
     for (let i = 0; i < count; i++) {
-      if (burstTimer.current > 0) {
-        // outward burst
-        pos.array[i * 3] +=
-          Math.sin(i * 2) * 0.04;
-        pos.array[i * 3 + 2] +=
-          Math.cos(i * 2) * 0.04;
-      }
+      // vertical fall
+      pos.array[i * 3 + 1] -= 1.2 * delta;
 
-      // falling
-      pos.array[i * 3 + 1] -= 0.02;
+      // subtle wind drift
+      pos.array[i * 3] += Math.sin(i + time * 0.8) * 0.0006;
+      pos.array[i * 3 + 2] += Math.cos(i + time * 0.8) * 0.0006;
 
-      // slight drift
-      pos.array[i * 3] +=
-        Math.sin(i + performance.now() * 0.001) * 0.001;
+      // respawn at tree canopy
+      if (pos.array[i * 3 + 1] < 0.15) {
+        const r1 = seededRandom(i * 33.1 + time);
+        const r2 = seededRandom(i * 91.7 + time);
 
-      // respawn in canopy
-      if (pos.array[i * 3 + 1] < 0.2) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * canopyRadius;
+        const angle = r1 * Math.PI * 2;
+        const radius = r2 * canopyRadius;
 
-        pos.array[i * 3] = Math.cos(angle) * radius;
-        pos.array[i * 3 + 1] =
-          canopyY + Math.random() * canopyRadius * 0.8;
-        pos.array[i * 3 + 2] = Math.sin(angle) * radius;
+        pos.array[i * 3] = canopyCenterX + Math.cos(angle) * radius;
+        pos.array[i * 3 + 1] = canopyCenterY + r2 * 1.5;
+        pos.array[i * 3 + 2] = canopyCenterZ + Math.sin(angle) * radius;
       }
     }
 
@@ -84,7 +78,11 @@ export default function Petals() {
         />
       </bufferGeometry>
 
-      <pointsMaterial color="#ffb6c1" size={0.08} />
+      <pointsMaterial
+        color="#ffb6c1"
+        size={0.08}
+        sizeAttenuation
+      />
     </points>
   );
 }
