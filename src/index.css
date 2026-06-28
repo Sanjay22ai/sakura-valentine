@@ -1,11 +1,43 @@
 body, html, #root {
+
   margin: 0;
+
   height: 100%;
+
   overflow: hidden;
-  font-family: system-ui, sans-serif;
+
+  font-family: "Segoe UI", system-ui, sans-serif;
+
+  background: #221c2e;
+
 }
 
+
+
 canvas {
+
   width: 100%;
+
   height: 100%;
+
+  display: block;
+
+}
+
+
+
+button:hover {
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 10px 28px rgba(255, 100, 140, 0.45);
+
+}
+
+
+
+button:active {
+
+  transform: translateY(0);
+
 }
