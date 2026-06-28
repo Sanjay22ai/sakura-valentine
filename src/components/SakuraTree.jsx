@@ -1,35 +1,19 @@
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-
-export default function Tree() {
-  const treeRef = useRef();
-
-  useFrame(({ clock }) => {
-    if (!treeRef.current) return;
-
-    const t = clock.elapsedTime;
-
-    // gentle wind sway
-    treeRef.current.rotation.z =
-      Math.sin(t * 0.6) * 0.02;
-
-    treeRef.current.rotation.x =
-      Math.sin(t * 0.4) * 0.01;
-  });
-
+export default function SakuraTree() {
   return (
-    <group ref={treeRef}>
+    <group position={[2, 0, 0]}>
+      
       {/* trunk */}
       <mesh position={[0, 1, 0]}>
-        <cylinderGeometry args={[0.3, 0.5, 2]} />
-        <meshStandardMaterial color="#8b5a2b" />
+        <cylinderGeometry args={[0.35, 0.5, 2.5, 16]} />
+        <meshStandardMaterial color="#6b4f3a" />
       </mesh>
 
-      {/* blossom canopy */}
+      {/* canopy */}
       <mesh position={[0, 3, 0]}>
         <sphereGeometry args={[2, 32, 32]} />
-        <meshStandardMaterial color="#ffb6c1" />
+        <meshStandardMaterial color="#ffc6d5" />
       </mesh>
+
     </group>
   );
 }

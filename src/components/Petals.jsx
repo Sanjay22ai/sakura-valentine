@@ -1,66 +1,26 @@
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-/* deterministic pseudo random generator */
-function seededRandom(seed) {
-  let x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
 export default function Petals() {
-  const pointsRef = useRef();
-  const count = 350;
+  const ref = useRef();
+  const count = 220;
 
-  /* IMPORTANT: match tree position */
-  const canopyCenterX = 2;   // tree x position
-  const canopyCenterY = 3;   // canopy height
-  const canopyCenterZ = 0;
+  const positions = new Float32Array(count * 3);
 
-  const canopyRadius = 2;
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = 2 + (Math.random() - 0.5) * 2;
+    positions[i * 3 + 1] = 3 + Math.random() * 2;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
+  }
 
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3);
-
-    for (let i = 0; i < count; i++) {
-      const r1 = seededRandom(i * 12.989);
-      const r2 = seededRandom(i * 78.233);
-
-      const angle = r1 * Math.PI * 2;
-      const radius = r2 * canopyRadius;
-
-      arr[i * 3] = canopyCenterX + Math.cos(angle) * radius;
-      arr[i * 3 + 1] = canopyCenterY + r2 * 1.5;
-      arr[i * 3 + 2] = canopyCenterZ + Math.sin(angle) * radius;
-    }
-
-    return arr;
-  }, []);
-
-  useFrame((state, delta) => {
-    if (!pointsRef.current) return;
-
-    const pos = pointsRef.current.geometry.attributes.position;
-    const time = state.clock.elapsedTime;
+  useFrame((_, delta) => {
+    const pos = ref.current.geometry.attributes.position;
 
     for (let i = 0; i < count; i++) {
-      // vertical fall
-      pos.array[i * 3 + 1] -= 1.2 * delta;
+      pos.array[i * 3 + 1] -= delta * 1.2;
 
-      // subtle wind drift
-      pos.array[i * 3] += Math.sin(i + time * 0.8) * 0.0006;
-      pos.array[i * 3 + 2] += Math.cos(i + time * 0.8) * 0.0006;
-
-      // respawn at tree canopy
-      if (pos.array[i * 3 + 1] < 0.15) {
-        const r1 = seededRandom(i * 33.1 + time);
-        const r2 = seededRandom(i * 91.7 + time);
-
-        const angle = r1 * Math.PI * 2;
-        const radius = r2 * canopyRadius;
-
-        pos.array[i * 3] = canopyCenterX + Math.cos(angle) * radius;
-        pos.array[i * 3 + 1] = canopyCenterY + r2 * 1.5;
-        pos.array[i * 3 + 2] = canopyCenterZ + Math.sin(angle) * radius;
+      if (pos.array[i * 3 + 1] < 0) {
+        pos.array[i * 3 + 1] = 3 + Math.random() * 2;
       }
     }
 
@@ -68,21 +28,16 @@ export default function Petals() {
   });
 
   return (
-    <points ref={pointsRef}>
+    <points ref={ref}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={positions.length / 3}
           array={positions}
+          count={positions.length / 3}
           itemSize={3}
         />
       </bufferGeometry>
-
-      <pointsMaterial
-        color="#ffb6c1"
-        size={0.08}
-        sizeAttenuation
-      />
+      <pointsMaterial color="#ffb6c1" size={0.12} />
     </points>
   );
 }
